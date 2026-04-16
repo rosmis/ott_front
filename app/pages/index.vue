@@ -59,10 +59,51 @@ const { data: categoriesData } = useFetchApi<ApiResponse<Category[]>>('api/categ
   immediate: true
 })
 
-const { data, status } = useFetchApi<ApiResponsePaginated<IndexVideo[]>>('api/videos', {
+const { data, status, refresh } = useFetchApi<ApiResponsePaginated<IndexVideo[]>>('api/videos', {
   immediate: true,
   query: filterParams
 })
+
+const toast = useToast()
+const { $api } = useNuxtApp()
+
+const selectedVideoToDelete = ref<IndexVideo>()
+const isDeleteModalOpen = ref<boolean>(false)
+const isDeleting = ref<boolean>(false)
+
+const confirmDelete = (video: IndexVideo) => {
+  selectedVideoToDelete.value = video
+  isDeleteModalOpen.value = true
+}
+
+const deleteVideo = async () => {
+  if (!selectedVideoToDelete.value) return
+  isDeleting.value = true
+
+  try {
+    await $api(`sanctum/csrf-cookie`)
+    await $api(`api/videos/${selectedVideoToDelete.value.id}`, { method: 'DELETE' })
+    toast.add({
+      title: 'Deleted',
+      description: `"${selectedVideoToDelete.value.title}" has been deleted.`,
+      icon: 'i-lucide-trash-2',
+      color: 'success'
+    })
+    isDeleteModalOpen.value = false
+    selectedVideoToDelete.value = undefined
+
+    await refresh()
+  } catch {
+    toast.add({
+      title: 'Error',
+      description: 'Failed to delete the video. Please try again.',
+      icon: 'i-lucide-x',
+      color: 'error'
+    })
+  } finally {
+    isDeleting.value = false
+  }
+}
 </script>
 
 <template>
@@ -127,13 +168,22 @@ const { data, status } = useFetchApi<ApiResponsePaginated<IndexVideo[]>>('api/vi
       </template>
 
       <template #actions-cell="{ row }">
-        <UButton
-          :to="{ name: 'videos-id-edit', params: { id: row.original.id } }"
-          icon="i-lucide-pencil"
-          color="neutral"
-          variant="ghost"
-          size="sm"
-        />
+        <div class="flex items-center justify-end gap-1">
+          <UButton
+            :to="{ name: 'videos-id-edit', params: { id: row.original.id } }"
+            icon="i-lucide-pencil"
+            color="neutral"
+            variant="ghost"
+            size="sm"
+          />
+          <UButton
+            icon="i-lucide-trash-2"
+            color="error"
+            variant="ghost"
+            size="sm"
+            @click="confirmDelete(row.original)"
+          />
+        </div>
       </template>
     </UTable>
 
@@ -144,5 +194,36 @@ const { data, status } = useFetchApi<ApiResponsePaginated<IndexVideo[]>>('api/vi
         :items-per-page="PAGE_SIZE"
       />
     </div>
+
+    <UModal
+      v-model:open="isDeleteModalOpen"
+      title="Delete Video"
+      :ui="{ footer: 'justify-end' }"
+    >
+      <template #body>
+        <p class="text-sm text-muted">
+          Are you sure you want to delete
+          <span class="font-semibold text-highlighted">"{{ selectedVideoToDelete?.title }}"</span> ?
+          This action cannot be undone.
+        </p>
+      </template>
+      <template #footer>
+        <UButton
+          color="neutral"
+          variant="outline"
+          :disabled="isDeleting"
+          @click="isDeleteModalOpen = false"
+        >
+          Cancel
+        </UButton>
+        <UButton
+          color="error"
+          :loading="isDeleting"
+          @click="deleteVideo()"
+        >
+          Delete
+        </UButton>
+      </template>
+    </UModal>
   </div>
 </template>
