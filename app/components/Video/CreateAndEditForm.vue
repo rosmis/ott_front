@@ -4,6 +4,12 @@ import { z } from 'zod'
 
 type VideoForm = z.infer<typeof videoSchema>
 
+const { video } = defineProps<{
+  video?: Video
+}>()
+
+const isEditMode = computed(() => !!video)
+
 const router = useRouter()
 const toast = useToast()
 const { $api } = useNuxtApp()
@@ -17,28 +23,28 @@ const categoryOptions = computed(() =>
   (categoriesData.value?.data ?? []).map(c => ({ label: c.name, value: c.id }))
 )
 
+const fileSchema = (label: string) =>
+  z.instanceof(File, { message: `${label} is required` })
+    .refine(f => f.size > 0, `${label} file cannot be empty`)
+
 const videoSchema = z.object({
   title: z.string().min(1, 'Title is required').max(255),
   description: z.string().min(1, 'Description is required'),
-  thumbnail: z
-    .instanceof(File, { message: 'Thumbnail is required' })
-    .refine(f => f.size > 0, 'Thumbnail file cannot be empty'),
-  video: z
-    .instanceof(File, { message: 'Video file is required' })
-    .refine(f => f.size > 0, 'Video file cannot be empty'),
+  thumbnail: isEditMode.value ? fileSchema('Thumbnail').optional() : fileSchema('Thumbnail'),
+  video: isEditMode.value ? fileSchema('Video').optional() : fileSchema('Video'),
   status: z.enum(VideoStatus, { error: 'Status is required' }),
   category_id: z.number({ error: 'Category is required' }),
   slug: z.string()
 })
 
 const state = reactive<Partial<VideoForm>>({
-  title: '',
-  description: '',
+  title: video?.title ?? '',
+  description: video?.description ?? '',
   thumbnail: undefined,
   video: undefined,
-  status: undefined,
-  category_id: undefined,
-  slug: ''
+  status: video?.status ?? undefined,
+  category_id: video?.category_id ?? undefined,
+  slug: video?.slug ?? ''
 })
 
 const { r$ } = useRegleSchema(state, videoSchema)
@@ -53,15 +59,19 @@ const onSubmit = async () => {
   formData.append('status', data.status)
   formData.append('category_id', String(data.category_id))
   formData.append('slug', data.slug)
-  formData.append('thumbnail', data.thumbnail)
-  formData.append('video', data.video)
+  if (data.thumbnail) formData.append('thumbnail', data.thumbnail)
+  if (data.video) formData.append('video', data.video)
+
+  if (video) {
+    formData.append('_method', 'patch')
+  }
 
   isLoading.value = true
 
   await $api('sanctum/csrf-cookie')
 
   try {
-    await $api('api/videos', {
+    await $api(`api/videos/${video?.id ?? ''}`, {
       method: 'POST',
       body: formData
     })
@@ -70,7 +80,7 @@ const onSubmit = async () => {
 
     toast.add({
       title: 'Error',
-      description: error?._data.message || 'An error occurred while creating the video. Please try again.',
+      description: error?._data.message || `An error occurred while ${video ? 'updating' : 'creating'} the video. Please try again.`,
       icon: 'i-lucide-x',
       color: 'error'
     })
@@ -81,7 +91,7 @@ const onSubmit = async () => {
 
   toast.add({
     title: 'Success',
-    description: 'Video created successfully.',
+    description: video ? 'Video updated successfully.' : 'Video created successfully.',
     icon: 'i-lucide-check',
     color: 'success'
   })
@@ -178,32 +188,60 @@ watch(
 
     <UFormField
       label="Thumbnail"
-      :error="r$.thumbnail.$errors[0]"
+      :error="r$.thumbnail?.$errors[0]"
     >
-      <UFileUpload
-        v-model="r$.$value.thumbnail"
-        accept="image/*"
-        label="Drop your thumbnail here"
-        description="PNG, JPG, WEBP"
-        icon="i-lucide-image"
-        class="w-full"
-        @update:model-value="r$.thumbnail.$touch()"
-      />
+      <div class="space-y-2">
+        <img
+          v-if="video?.thumbnail_url && !r$.$value.thumbnail"
+          :src="video.thumbnail_url"
+          alt="Current thumbnail"
+          class="h-32 w-auto rounded-md object-cover border border-default"
+        >
+        <UFileUpload
+          v-model="r$.$value.thumbnail"
+          accept="image/*"
+          :label="video?.thumbnail_url ? 'Replace thumbnail' : 'Drop your thumbnail here'"
+          description="PNG, JPG, WEBP"
+          icon="i-lucide-image"
+          class="w-full"
+          @update:model-value="r$.thumbnail?.$touch()"
+        />
+      </div>
     </UFormField>
 
     <UFormField
       label="Video"
-      :error="r$.video.$errors[0]"
+      :error="r$.video?.$errors[0]"
     >
-      <UFileUpload
-        v-model="r$.$value.video"
-        accept="video/*"
-        label="Drop your video here"
-        description="MP4, MOV, AVI, MKV"
-        icon="i-lucide-video"
-        class="w-full"
-        @update:model-value="r$.video.$touch()"
-      />
+      <div class="space-y-2">
+        <div
+          v-if="video?.video_url && !r$.$value.video"
+          class="flex items-center gap-2 text-sm text-muted"
+        >
+          <UIcon
+            name="i-lucide-video"
+            class="shrink-0"
+          />
+          <span class="truncate">Current video on file</span>
+          <UButton
+            :to="video.video_url"
+            target="_blank"
+            size="xs"
+            color="neutral"
+            variant="ghost"
+            icon="i-lucide-external-link"
+          />
+        </div>
+        <UFileUpload
+          v-model="r$.$value.video"
+          accept="video/*"
+          :label="video?.video_url ? 'Replace video' : 'Drop your video here'"
+          description="MP4, MOV, AVI, MKV"
+          icon="i-lucide-video"
+          class="w-full"
+          @update:model-value="r$.video?.$touch()"
+        />
+      </div>
     </UFormField>
 
     <div class="flex justify-end gap-3">
@@ -220,7 +258,7 @@ watch(
         :loading="isLoading"
         :disabled="isLoading"
       >
-        Create Video
+        {{ video ? 'Update Video' : 'Create Video' }}
       </UButton>
     </div>
   </form>

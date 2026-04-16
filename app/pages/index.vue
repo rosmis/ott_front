@@ -17,14 +17,14 @@ const filterParams = computed((): VideoFiltersParams => ({
 }))
 
 const categories = computed((): Category[] => categoriesData.value?.data ?? [])
-const videos = computed((): Video[] => data.value?.data ?? [])
+const videos = computed((): IndexVideo[] => data.value?.data ?? [])
 const total = computed(() => data.value?.meta.total ?? 0)
 
 const statusOptions: { label: string, value: VideoStatus }[] = Array.from(videoStatusMapping.entries())
   .map(([key, value]) => ({ label: value.title, value: key }))
 const categoryOptions = computed((): { label: string, value: number }[] => categories.value.map(c => ({ label: c.name, value: c.id })))
 
-const columns: TableColumn<Video>[] = [
+const columns: TableColumn<IndexVideo>[] = [
   { accessorKey: 'title', header: 'Title' },
   { accessorKey: 'status', header: 'Status' },
   { accessorKey: 'duration', header: 'Duration' },
@@ -59,7 +59,7 @@ const { data: categoriesData } = useFetchApi<ApiResponse<Category[]>>('api/categ
   immediate: true
 })
 
-const { data, status } = useFetchApi<ApiResponsePaginated<Video[]>>('api/videos', {
+const { data, status } = useFetchApi<ApiResponsePaginated<IndexVideo[]>>('api/videos', {
   immediate: true,
   query: filterParams
 })

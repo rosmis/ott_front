@@ -1,4 +1,4 @@
-export type Video = {
+export type IndexVideo = {
   id: number
   title: string
   duration: number | null
@@ -14,6 +14,18 @@ export type Video = {
     name: string
   }
   published_at: Date | null
+}
+
+export type Video = {
+  id: number
+  title: string
+  description: string | null
+  duration: number | null
+  status: VideoStatus
+  thumbnail_url: string
+  category_id: number | null
+  video_url: string | null
+  slug: string
 }
 
 export type Category = {
