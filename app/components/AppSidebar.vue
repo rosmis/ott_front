@@ -8,9 +8,14 @@ const open = useCookie<boolean>('sidebar-open', { default: () => true })
 
 const navItems: NavigationMenuItem[] = [
   {
-    label: 'Dashboard',
-    icon: 'i-lucide-layout-dashboard',
+    label: 'Videos',
+    icon: 'i-lucide-video',
     to: '/'
+  },
+  {
+    label: 'Categories',
+    icon: 'i-lucide-list',
+    to: '/categories'
   }
 ]
 </script>

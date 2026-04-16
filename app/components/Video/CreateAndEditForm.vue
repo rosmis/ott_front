@@ -62,7 +62,7 @@ const onSubmit = async () => {
   if (data.thumbnail) formData.append('thumbnail', data.thumbnail)
   if (data.video) formData.append('video', data.video)
 
-  if (video) {
+  if (isEditMode.value) {
     formData.append('_method', 'patch')
   }
 
@@ -80,7 +80,7 @@ const onSubmit = async () => {
 
     toast.add({
       title: 'Error',
-      description: error?._data.message || `An error occurred while ${video ? 'updating' : 'creating'} the video. Please try again.`,
+      description: error?._data.message || `An error occurred while ${isEditMode.value ? 'updating' : 'creating'} the video. Please try again.`,
       icon: 'i-lucide-x',
       color: 'error'
     })
@@ -91,7 +91,7 @@ const onSubmit = async () => {
 
   toast.add({
     title: 'Success',
-    description: video ? 'Video updated successfully.' : 'Video created successfully.',
+    description: isEditMode.value ? 'Video updated successfully.' : 'Video created successfully.',
     icon: 'i-lucide-check',
     color: 'success'
   })
