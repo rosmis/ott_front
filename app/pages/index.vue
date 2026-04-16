@@ -75,19 +75,21 @@ const deleteVideo = async () => {
       icon: 'i-lucide-trash-2',
       color: 'success'
     })
-    isDeleteModalOpen.value = false
-    selectedVideoToDelete.value = undefined
 
     await refresh()
-  } catch {
+  } catch (err: any) {
+    const error = err.response as ApiError
+
     toast.add({
       title: 'Error',
-      description: 'Failed to delete the video. Please try again.',
+      description: error?._data.message || 'Failed to delete the video. Please try again.',
       icon: 'i-lucide-x',
       color: 'error'
     })
   } finally {
     isDeleting.value = false
+    isDeleteModalOpen.value = false
+    selectedVideoToDelete.value = undefined
   }
 }
 
