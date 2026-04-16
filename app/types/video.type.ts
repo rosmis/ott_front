@@ -33,3 +33,18 @@ export enum VideoStatus {
   Draft = 'draft',
   Archived = 'archived'
 }
+
+export const videoStatusMapping = new Map<VideoStatus, { color: 'success' | 'neutral' | 'warning', title: string }>([
+  [VideoStatus.Published, {
+    color: 'success',
+    title: 'Published'
+  }],
+  [VideoStatus.Draft, {
+    color: 'neutral',
+    title: 'Draft'
+  }],
+  [VideoStatus.Archived, {
+    color: 'warning',
+    title: 'Archived'
+  }]
+])
