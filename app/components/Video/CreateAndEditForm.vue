@@ -4,6 +4,11 @@ import { z } from 'zod'
 
 type VideoForm = z.infer<typeof videoSchema>
 
+const router = useRouter()
+const toast = useToast()
+const { $api } = useNuxtApp()
+
+const isLoading = ref<boolean>(false)
 const statusOptions = Array.from(videoStatusMapping.entries()).map(([key, val]) => ({
   label: val.title,
   value: key
@@ -21,7 +26,7 @@ const videoSchema = z.object({
   video: z
     .instanceof(File, { message: 'Video file is required' })
     .refine(f => f.size > 0, 'Video file cannot be empty'),
-  status: z.nativeEnum(VideoStatus, { error: 'Status is required' }),
+  status: z.enum(VideoStatus, { error: 'Status is required' }),
   category_id: z.number({ error: 'Category is required' }),
   slug: z.string()
 })
@@ -38,11 +43,50 @@ const state = reactive<Partial<VideoForm>>({
 
 const { r$ } = useRegleSchema(state, videoSchema)
 
-async function onSubmit() {
+const onSubmit = async () => {
   const { valid, data } = await r$.$validate()
   if (!valid) return
-  // TODO: HTTP call
-  console.log('valid form data', data)
+
+  const formData = new FormData()
+  formData.append('title', data.title)
+  formData.append('description', data.description)
+  formData.append('status', data.status)
+  formData.append('category_id', String(data.category_id))
+  formData.append('slug', data.slug)
+  formData.append('thumbnail', data.thumbnail)
+  formData.append('video', data.video)
+
+  isLoading.value = true
+
+  await $api('sanctum/csrf-cookie')
+
+  try {
+    await $api('api/videos', {
+      method: 'POST',
+      body: formData
+    })
+  } catch (err: any) {
+    const error = err.response as ApiError
+
+    toast.add({
+      title: 'Error',
+      description: error?._data.message || 'An error occurred while creating the video. Please try again.',
+      icon: 'i-lucide-x',
+      color: 'error'
+    })
+    return
+  } finally {
+    isLoading.value = false
+  }
+
+  toast.add({
+    title: 'Success',
+    description: 'Video created successfully.',
+    icon: 'i-lucide-check',
+    color: 'success'
+  })
+
+  router.push({ name: 'index' })
 }
 
 const { data: categoriesData } = useFetchApi<ApiResponse<Category[]>>('api/categories', {
@@ -173,6 +217,8 @@ watch(
       <UButton
         type="submit"
         color="primary"
+        :loading="isLoading"
+        :disabled="isLoading"
       >
         Create Video
       </UButton>

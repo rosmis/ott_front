@@ -1,5 +1,3 @@
-import type { FetchContext, FetchResponse } from 'ofetch'
-
 export interface ApiResponse<Data> {
   data: Data
 }
@@ -33,6 +31,11 @@ export interface ApiResponsePaginated<Data> extends ApiResponse<Data> {
   meta: ApiPaginationMeta
 }
 
-export type ApiError<T = Record<string, string>> = FetchContext<T> & {
-  response: FetchResponse<{ data: { message: string, errors?: T } }>
+export interface ApiError {
+  _data: {
+    message: string
+    errors: {
+      [key: string]: string[]
+    }
+  }
 }

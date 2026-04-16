@@ -30,12 +30,24 @@ export const useFetchApi = <Data = unknown>(
   options?: Parameters<typeof useFetch<Data>>['1']
     & UseFetchCustomOptions<Data>
 ) => {
+  const { apiUrl: baseURL } = useRuntimeConfig().public
+
   return useFetch<Data>(url, {
     ...options,
-    // TODO FIX UNKNOWN TYPE FROM THE API PLUGIN
-    $fetch: $fetch.create({
-      baseURL: useRuntimeConfig().public.apiUrl ?? 'http://localhost:80'
-    }),
+    baseURL,
+    $fetch: useNuxtApp().api as typeof $fetch,
+    onRequest: [
+      ({ options: fetchOptions }) => {
+        const token = useCookie<string>('XSRF-TOKEN')
+        if (token.value) {
+          fetchOptions.headers = new Headers(fetchOptions.headers)
+          fetchOptions.headers.set('X-XSRF-TOKEN', token.value)
+        }
+      },
+      ...(options?.onRequest
+        ? Array.isArray(options.onRequest) ? options.onRequest : [options.onRequest]
+        : [])
+    ],
     onResponse: [
       (event) => {
         if (event.response.status < httpstatus.BAD_REQUEST) {
