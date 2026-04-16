@@ -1,18 +1,24 @@
 <script lang="ts" setup>
 import type { TableColumn } from '@nuxt/ui'
 
-const filters = reactive<{ status: VideoStatus | undefined, category_id: number | undefined }>({
+const filters = reactive<VideoFilters>({
   status: undefined,
   category_id: undefined
 })
 
-const filterParams = computed((): VideoFilters => ({
-  'status[value]': filters.status ?? undefined,
-  'whereCategoryId[value]': filters.category_id ?? undefined
+const PAGE_SIZE = 10
+const page = ref<number>(1)
+
+const filterParams = computed((): VideoFiltersParams => ({
+  ...(filters.status && { 'status[value]': filters.status }),
+  ...(filters.category_id && { 'whereCategoryId[value]': filters.category_id }),
+  page: page.value,
+  limit: PAGE_SIZE
 }))
 
-const videos = computed((): Video[] => data.value?.data ?? [])
 const categories = computed((): Category[] => categoriesData.value?.data ?? [])
+const videos = computed((): Video[] => data.value?.data ?? [])
+const total = computed(() => data.value?.meta.total ?? 0)
 
 const statusOptions: { label: string, value: VideoStatus }[] = Array.from(videoStatusMapping.entries())
   .map(([key, value]) => ({ label: value.title, value: key }))
@@ -40,14 +46,19 @@ const formatDuration = (seconds: number | null): string => {
 
 const formatDate = (date: Date | null): string => {
   if (!date) return '—'
+
   return new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium' }).format(new Date(date))
 }
+
+watch(filters, () => {
+  page.value = 1
+})
 
 const { data: categoriesData } = useFetchApi<ApiResponse<Category[]>>('api/categories', {
   immediate: true
 })
 
-const { data, status } = useFetchApi<ApiResponse<Video[]>>('api/videos', {
+const { data, status } = useFetchApi<ApiResponsePaginated<Video[]>>('api/videos', {
   immediate: true,
   query: filterParams
 })
@@ -82,6 +93,7 @@ const { data, status } = useFetchApi<ApiResponse<Video[]>>('api/videos', {
       :data="videos"
       :columns="columns"
       :loading="status === 'pending'"
+      sticky
     >
       <template #status-cell="{ row }">
         <VideoStatusBadge :status="row.original.status" />
@@ -103,5 +115,13 @@ const { data, status } = useFetchApi<ApiResponse<Video[]>>('api/videos', {
         {{ formatDate(row.original.published_at) }}
       </template>
     </UTable>
+
+    <div class="flex justify-end border-t border-default pt-4">
+      <UPagination
+        v-model:page="page"
+        :total="total"
+        :items-per-page="PAGE_SIZE"
+      />
+    </div>
   </div>
 </template>

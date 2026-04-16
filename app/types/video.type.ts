@@ -23,9 +23,16 @@ export type Category = {
   videos_count: number
 }
 
-export type VideoFilters = {
+export type VideoFiltersParams = {
   'status[value]'?: VideoStatus
   'whereCategoryId[value]'?: number
+  'page'?: number
+  'limit'?: number
+}
+
+export type VideoFilters = {
+  status?: VideoStatus
+  category_id?: number
 }
 
 export enum VideoStatus {
