@@ -42,6 +42,8 @@ export const useFetchApi = <Data = unknown>(
         if (token.value) {
           fetchOptions.headers = new Headers(fetchOptions.headers)
           fetchOptions.headers.set('X-XSRF-TOKEN', token.value)
+          fetchOptions.credentials = 'include'
+          fetchOptions.headers.set('Accept', 'application/json')
         }
       },
       ...(options?.onRequest
