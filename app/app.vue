@@ -1,4 +1,8 @@
 <script setup lang="ts">
+useHead({
+  title: 'OTT CMS assessment'
+})
+
 const open = useCookie<boolean>('sidebar-open', { default: () => true })
 </script>
 

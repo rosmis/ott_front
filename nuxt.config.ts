@@ -14,6 +14,12 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/main.css'],
 
+  runtimeConfig: {
+    public: {
+      apiUrl: process.env.BASE_URL ?? 'http://localhost:80'
+    }
+  },
+
   compatibilityDate: '2025-01-15',
 
   eslint: {
