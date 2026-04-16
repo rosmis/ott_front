@@ -30,7 +30,8 @@ const columns: TableColumn<Video>[] = [
   { accessorKey: 'duration', header: 'Duration' },
   { accessorKey: 'category', header: 'Category' },
   { accessorKey: 'user', header: 'Published by' },
-  { accessorKey: 'published_at', header: 'Published at' }
+  { accessorKey: 'published_at', header: 'Published at' },
+  { id: 'actions', meta: { class: { td: 'text-right', th: 'text-right' } } }
 ]
 
 const formatDuration = (seconds: number | null): string => {
@@ -66,9 +67,19 @@ const { data, status } = useFetchApi<ApiResponsePaginated<Video[]>>('api/videos'
 
 <template>
   <div class="p-6 space-y-4">
-    <h1 class="text-2xl font-semibold text-highlighted">
-      Videos
-    </h1>
+    <div class="flex items-center justify-between">
+      <h1 class="text-2xl font-semibold text-highlighted">
+        Videos
+      </h1>
+      <UButton
+        :to="{ name: 'videos-create' }"
+        icon="i-lucide-plus"
+        color="primary"
+        variant="solid"
+      >
+        Add Video
+      </UButton>
+    </div>
 
     <div class="flex items-center gap-3">
       <USelectMenu
@@ -113,6 +124,16 @@ const { data, status } = useFetchApi<ApiResponsePaginated<Video[]>>('api/videos'
 
       <template #published_at-cell="{ row }">
         {{ formatDate(row.original.published_at) }}
+      </template>
+
+      <template #actions-cell="{ row }">
+        <UButton
+          :to="{ name: 'videos-id-edit', params: { id: row.original.id } }"
+          icon="i-lucide-pencil"
+          color="neutral"
+          variant="ghost"
+          size="sm"
+        />
       </template>
     </UTable>
 

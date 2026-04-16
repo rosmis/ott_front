@@ -14,10 +14,14 @@
     "@iconify-json/lucide": "^1.2.102",
     "@iconify-json/simple-icons": "^1.2.78",
     "@nuxt/ui": "^4.6.1",
+    "@regle/core": "^1.23.0",
+    "@regle/rules": "^1.23.0",
+    "@regle/schemas": "^1.23.0",
     "http-status": "^2.1.0",
     "nuxt": "^4.4.2",
     "nuxt-auth-sanctum": "^2.3.3",
-    "tailwindcss": "^4.2.2"
+    "tailwindcss": "^4.2.2",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@nuxt/eslint": "^1.15.2",
