@@ -1,13 +1,22 @@
 <script lang="ts" setup>
 import type { TableColumn } from '@nuxt/ui'
 
+const toast = useToast()
+const { $api } = useNuxtApp()
+
 const filters = reactive<VideoFilters>({
   status: undefined,
   category_id: undefined
 })
 
 const PAGE_SIZE = 10
+const statusOptions: { label: string, value: VideoStatus }[] = Array.from(videoStatusMapping.entries())
+  .map(([key, value]) => ({ label: value.title, value: key }))
+
 const page = ref<number>(1)
+const selectedVideoToDelete = ref<IndexVideo>()
+const isDeleteModalOpen = ref<boolean>(false)
+const isDeleting = ref<boolean>(false)
 
 const filterParams = computed((): VideoFiltersParams => ({
   ...(filters.status && { 'status[value]': filters.status }),
@@ -19,9 +28,6 @@ const filterParams = computed((): VideoFiltersParams => ({
 const categories = computed((): Category[] => categoriesData.value?.data ?? [])
 const videos = computed((): IndexVideo[] => data.value?.data ?? [])
 const total = computed(() => data.value?.meta.total ?? 0)
-
-const statusOptions: { label: string, value: VideoStatus }[] = Array.from(videoStatusMapping.entries())
-  .map(([key, value]) => ({ label: value.title, value: key }))
 const categoryOptions = computed((): { label: string, value: number }[] => categories.value.map(c => ({ label: c.name, value: c.id })))
 
 const columns: TableColumn<IndexVideo>[] = [
@@ -50,26 +56,6 @@ const formatDate = (date: Date | null): string => {
 
   return new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium' }).format(new Date(date))
 }
-
-watch(filters, () => {
-  page.value = 1
-})
-
-const { data: categoriesData } = useFetchApi<ApiResponse<Category[]>>('api/categories', {
-  immediate: true
-})
-
-const { data, status, refresh } = useFetchApi<ApiResponsePaginated<IndexVideo[]>>('api/videos', {
-  immediate: true,
-  query: filterParams
-})
-
-const toast = useToast()
-const { $api } = useNuxtApp()
-
-const selectedVideoToDelete = ref<IndexVideo>()
-const isDeleteModalOpen = ref<boolean>(false)
-const isDeleting = ref<boolean>(false)
 
 const confirmDelete = (video: IndexVideo) => {
   selectedVideoToDelete.value = video
@@ -104,6 +90,19 @@ const deleteVideo = async () => {
     isDeleting.value = false
   }
 }
+
+const { data: categoriesData } = useFetchApi<ApiResponse<Category[]>>('api/categories', {
+  immediate: true
+})
+
+const { data, status, refresh } = useFetchApi<ApiResponsePaginated<IndexVideo[]>>('api/videos', {
+  immediate: true,
+  query: filterParams
+})
+
+watch(filters, () => {
+  page.value = 1
+})
 </script>
 
 <template>
